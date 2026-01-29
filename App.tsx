@@ -63,13 +63,22 @@ const App: React.FC = () => {
     const parsed = await parseNaturalLanguageTask(input);
     
     if (parsed) {
+      // Robustly map priority and category strings to Enums
+      const mappedPriority = Object.values(Priority).includes(parsed.priority as Priority) 
+        ? (parsed.priority as Priority) 
+        : Priority.MEDIUM;
+      
+      const mappedCategory = Object.values(Category).includes(parsed.category as Category) 
+        ? (parsed.category as Category) 
+        : Category.PERSONAL;
+
       const newTask: Task = {
         id: crypto.randomUUID(),
         title: parsed.title,
         deadline: parsed.deadline,
         reminder: parsed.reminder,
-        priority: parsed.priority as Priority,
-        category: parsed.category as Category,
+        priority: mappedPriority,
+        category: mappedCategory,
         completed: false,
         subtasks: [],
         createdAt: new Date().toISOString(),
@@ -77,10 +86,14 @@ const App: React.FC = () => {
       };
       setTasks(prev => [newTask, ...prev]);
     } else {
+      // Basic manual parsing if AI fails completely
+      const isHigh = input.toLowerCase().includes('high') || input.toLowerCase().includes('urgent');
+      const isLow = input.toLowerCase().includes('low');
+      
       const fallback: Task = {
         id: crypto.randomUUID(),
         title: input,
-        priority: Priority.MEDIUM,
+        priority: isHigh ? Priority.HIGH : isLow ? Priority.LOW : Priority.MEDIUM,
         category: Category.PERSONAL,
         completed: false,
         subtasks: [],
